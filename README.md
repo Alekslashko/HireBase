@@ -1,1 +1,1 @@
-Admin account - Email: example@gmail.com Password:example123
+Admin account - Email: example@gmail.com Password: example123
