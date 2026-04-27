@@ -1,0 +1,43 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
+import { db } from "../services/firebase";
+import { PostCard } from "../components/PostCard";
+
+export default function Dashboard({ globalSearch }) {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(200));
+    const snap = await getDocs(q);
+    setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  const filtered = useMemo(() => {
+    const s = (globalSearch || "").trim().toLowerCase();
+    if (!s) return posts;
+    return posts.filter(p => {
+      const hay = `${p.title||""} ${p.description||""} ${p.category||""} ${p.ownerEmail||""}`.toLowerCase();
+      return hay.includes(s);
+    });
+  }, [posts, globalSearch]);
+
+  return (
+    <div className="grid" style={{ gap: 14 }}>
+      <div className="topbar">
+        <div>
+          <div className="h1">Dashboard</div>
+          <div className="small">Browse posts. Use the sidebar search to filter.</div>
+        </div>
+      </div>
+
+      {loading ? <div className="card pad">Loading…</div> : null}
+      {!loading && filtered.length === 0 ? <div className="card pad">No posts found.</div> : null}
+      {filtered.map(p => <PostCard key={p.id} post={p} />)}
+    </div>
+  );
+}
